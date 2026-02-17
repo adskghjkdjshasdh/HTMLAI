@@ -3,20 +3,13 @@ import cors from "cors";
 import katex from "katex";
 import emoji from "node-emoji";
 
-const apiKey = "RWs7zc6iOlfpn1EYOdWMIjRpVkSa9oQlDWI6TlD";
+const apiKey = process.env.COHERE_API_KEY;
 
 // Initialize server
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-/**
- * Process text:
- * 1. Convert emoji shortcodes to real emoji
- * 2. Render block math $$...$$
- * 3. Render inline math $...$
- * 4. Preserve all Unicode symbols
- */
 function processText(text) {
 
   // ✅ Convert emoji shortcodes to real emoji
