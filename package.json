@@ -1,0 +1,15 @@
+
+{
+  "name": "HTMLAI",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cohere-ai": "^7.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "katex": "^0.16.28",
+    "node-emoji": "^1.11.0"
+  }
+}
