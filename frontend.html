@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HTMLAI</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 30px;
+      max-width: 700px;
+      width: 90%;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    textarea {
+      width: 100%;
+      font-size: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .button-container {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    button {
+      background: #4a90e2;
+      color: #fff;
+      font-size: 16px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #357ab7;
+    }
+
+    #loader {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #ccc;
+      border-top: 3px solid #4a90e2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #loading {
+      font-size: 14px;
+      color: #555;
+      display: none;
+      margin-left: 10px;
+    }
+
+    #output {
+      white-space: pre-wrap;
+      background: #f7f9fc;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e1e4e8;
+      margin-top: 20px;
+      min-height: 80px;
+      font-size: 15px;
+      color: #222;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>AI Assistant</h1>
+  <textarea id="prompt" rows="6" placeholder="Type your prompt here…"></textarea>
+
+  <div class="button-container">
+    <button id="generateBtn">Generate</button>
+    <span id="loading"><div id="loader"></div> Generating...</span>
+  </div>
+
+  <h3>Output:</h3>
+  <pre id="output"></pre>
+</div>
+
+<script>
+const promptBox = document.getElementById("prompt");
+const output = document.getElementById("output");
+const loading = document.getElementById("loading");
+const button = document.getElementById("generateBtn");
+
+button.addEventListener("click", askAI);
+
+async function askAI() {
+  const prompt = promptBox.value.trim();
+  if (!prompt) {
+    output.textContent = "Please enter a prompt!";
+    return;
+  }
+
+  loading.style.display = "inline";
+  output.textContent = "";
+
+  try {
+    const res = await fetch("https://htmlai.onrender.com/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Server Error ${res.status}: ${text}`);
+    }
+
+    const contentType = res.headers.get("content-type") || "";
+    const data = contentType.includes("application/json") ? await res.json() : { reply: await res.text() };
+
+    output.textContent = data.reply || "[No reply received]";
+  } catch (err) {
+    output.textContent = "Error: " + err.message;
+  } finally {
+    loading.style.display = "none";
+  }
+}
+</script>
+
+</body>
+</html>
