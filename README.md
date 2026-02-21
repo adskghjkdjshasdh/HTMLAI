@@ -1,6 +1,7 @@
 # HTMLAI
 
-HTMLAI is a lightweight AI web interface that connects to a hosted backend.
+HTMLAI is a lightweight AI web interface that connects to a hosted backend. HTMLAI is great for evading school restrctions on AI and is hidden from GoGuardian, Lightspeed, Linewize and much more due to it being a HTML file.
+
 
 You do NOT need to install anything to use it. Just download the frontend file and open it.
 
@@ -16,5 +17,3 @@ You do NOT need to install anything to use it. Just download the frontend file a
 6. The AI response will appear below.
 
 That’s it.
-
-HTMLAI is great for evading school restrctions on AI and is hidden from GoGuardian, Lightspeed, Linewize and much more due to it being a HTML file.
