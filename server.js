@@ -79,27 +79,33 @@ app.post("/", async (req, res) => {
 
     const data = await response.json();
 
-    // FIX: Find the assistant message and extract any text content
-    const assistantMsg = data.messages?.find(m => m.role === "assistant");
-
-    // Loop through content to find first text
+    // FIX: Extract first text from any message/content
     let text = "";
-    if (assistantMsg?.content?.length > 0) {
-      for (const block of assistantMsg.content) {
-        if (block.text) {
-          text = block.text;
-          break;
-        } else if (block.type === "output_text" && block.text) {
-          text = block.text;
-          break;
+    if (data.messages?.length > 0) {
+      for (const msg of data.messages) {
+        if (msg.content?.length > 0) {
+          for (const block of msg.content) {
+            if (block.text) {
+              text = block.text;
+              break;
+            } else if (block.type === "output_text" && block.text) {
+              text = block.text;
+              break;
+            }
+          }
         }
+        if (text) break; // Stop at first text found
       }
     }
 
-    // ✅ Process KaTeX + emojis
+    if (!text) {
+      throw new Error("Cohere returned no text in the response");
+    }
+
+    // Process KaTeX + emojis
     text = processText(text);
 
-    // Return HTML so math renders
+    // Return HTML
     res.send(`
       <html>
         <head>
