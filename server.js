@@ -9,12 +9,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Function to process text: render KaTeX and emojis
+// Process text: KaTeX + emojis
 function processText(text) {
-  // Convert emoji shortcodes
   text = emoji.emojify(text);
 
-  // Render block math $$...$$
+  // Block math $$...$$
   text = text.replace(/\$\$([\s\S]+?)\$\$/g, (_, expr) => {
     try {
       return katex.renderToString(expr, { displayMode: true, throwOnError: false });
@@ -23,7 +22,7 @@ function processText(text) {
     }
   });
 
-  // Render inline math $...$
+  // Inline math $...$
   text = text.replace(/\$([^$]+)\$/g, (_, expr) => {
     try {
       return katex.renderToString(expr, { displayMode: false, throwOnError: false });
@@ -56,7 +55,7 @@ app.get("/", (req, res) => {
 app.post("/", async (req, res) => {
   try {
     const { prompt } = req.body;
-    if (!prompt) return res.status(400).json({ error: "Missing 'prompt' in request body" });
+    if (!prompt) return res.status(400).send("Missing 'prompt'");
 
     const response = await fetch("https://api.cohere.com/v2/chat", {
       method: "POST",
@@ -80,19 +79,27 @@ app.post("/", async (req, res) => {
 
     const data = await response.json();
 
-    // Find first assistant message safely
+    // FIX: Find the assistant message and extract any text content
     const assistantMsg = data.messages?.find(m => m.role === "assistant");
-    let text = assistantMsg?.content?.[0]?.text;
 
-    if (!text) {
-      // Plain text fallback if AI response is missing
-      return res.send("Sorry, I couldn't get a response from the AI.");
+    // Loop through content to find first text
+    let text = "";
+    if (assistantMsg?.content?.length > 0) {
+      for (const block of assistantMsg.content) {
+        if (block.text) {
+          text = block.text;
+          break;
+        } else if (block.type === "output_text" && block.text) {
+          text = block.text;
+          break;
+        }
+      }
     }
 
-    // Process KaTeX + emojis
+    // ✅ Process KaTeX + emojis
     text = processText(text);
 
-    // Return HTML for math rendering
+    // Return HTML so math renders
     res.send(`
       <html>
         <head>
