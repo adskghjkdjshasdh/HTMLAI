@@ -4,6 +4,7 @@ import katex from "katex";
 import emoji from "node-emoji";
 
 const apiKey = process.env.COHERE_API_KEY;
+if (!apiKey) throw new Error("COHERE_API_KEY not set");
 
 const app = express();
 app.use(cors());
@@ -32,6 +33,23 @@ function processText(text) {
   });
 
   return text;
+}
+
+// Extract any text from Cohere response
+function extractText(messages) {
+  if (!messages?.length) return null;
+  for (const msg of messages) {
+    if (!msg.content?.length) continue;
+    for (const block of msg.content) {
+      if (block.text) return block.text;
+      if (block.type === "output_text" && block.text) return block.text;
+      if (block.content && Array.isArray(block.content)) {
+        const nested = extractText([{ content: block.content }]);
+        if (nested) return nested;
+      }
+    }
+  }
+  return null;
 }
 
 // Homepage
@@ -64,7 +82,8 @@ app.post("/", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "command-a-03-2025",
+        // Use a model most accounts can access
+        model: "command-nightly",
         messages: [
           { role: "system", content: "You are a helpful assistant." },
           { role: "user", content: prompt },
@@ -79,28 +98,10 @@ app.post("/", async (req, res) => {
 
     const data = await response.json();
 
-    // FIX: Extract first text from any message/content
-    let text = "";
-    if (data.messages?.length > 0) {
-      for (const msg of data.messages) {
-        if (msg.content?.length > 0) {
-          for (const block of msg.content) {
-            if (block.text) {
-              text = block.text;
-              break;
-            } else if (block.type === "output_text" && block.text) {
-              text = block.text;
-              break;
-            }
-          }
-        }
-        if (text) break; // Stop at first text found
-      }
-    }
+    // Extract any text from the response
+    let text = extractText(data.messages);
 
-    if (!text) {
-      throw new Error("Cohere returned no text in the response");
-    }
+    if (!text) throw new Error("Cohere returned no text. Check your API key or model.");
 
     // Process KaTeX + emojis
     text = processText(text);
@@ -124,6 +125,5 @@ app.post("/", async (req, res) => {
   }
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
