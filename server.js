@@ -5,35 +5,28 @@ import emoji from "node-emoji";
 
 const apiKey = process.env.COHERE_API_KEY;
 
-// Initialize server
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Function to process text: render LaTeX and emojis
 function processText(text) {
-
-  // ✅ Convert emoji shortcodes to real emoji
+  // Convert emoji shortcodes
   text = emoji.emojify(text);
 
-  // ✅ Render block math $$...$$
+  // Render block math $$...$$
   text = text.replace(/\$\$([\s\S]+?)\$\$/g, (_, expr) => {
     try {
-      return katex.renderToString(expr, {
-        displayMode: true,
-        throwOnError: false
-      });
+      return katex.renderToString(expr, { displayMode: true, throwOnError: false });
     } catch {
       return expr;
     }
   });
 
-  // ✅ Render inline math $...$
+  // Render inline math $...$
   text = text.replace(/\$([^$]+)\$/g, (_, expr) => {
     try {
-      return katex.renderToString(expr, {
-        displayMode: false,
-        throwOnError: false
-      });
+      return katex.renderToString(expr, { displayMode: false, throwOnError: false });
     } catch {
       return expr;
     }
@@ -63,20 +56,21 @@ app.get("/", (req, res) => {
 app.post("/", async (req, res) => {
   try {
     const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: "Missing 'prompt'" });
 
     const response = await fetch("https://api.cohere.com/v2/chat", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "command-a-03-2025",
         messages: [
           { role: "system", content: "You are a helpful assistant." },
-          { role: "user", content: prompt }
-        ]
-      })
+          { role: "user", content: prompt },
+        ],
+      }),
     });
 
     if (!response.ok) {
@@ -85,12 +79,14 @@ app.post("/", async (req, res) => {
     }
 
     const data = await response.json();
-    let text = data.message.content[0].text;
 
-    // ✅ Process LaTeX + emojis + Unicode
+    // ✅ Correct path to Cohere assistant text
+    let text = data.messages[0].content[0].text;
+
+    // ✅ Process KaTeX + emojis
     text = processText(text);
 
-    // Return HTML snippet ready for browser
+    // Return as HTML so math renders
     res.send(`
       <html>
         <head>
