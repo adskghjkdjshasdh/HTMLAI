@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Function to process text: render LaTeX and emojis
+// Function to process text: render KaTeX and emojis
 function processText(text) {
   // Convert emoji shortcodes
   text = emoji.emojify(text);
@@ -45,8 +45,8 @@ app.get("/", (req, res) => {
         <title>AI Backend</title>
       </head>
       <body>
-        <h1>AI is online!</h1>
-        <p>POST to <code>/</code> with { "prompt": "..." }</p>
+        <h1>AI Backend Online!</h1>
+        <p>POST to <code>/</code> with JSON: { "prompt": "..." }</p>
       </body>
     </html>
   `);
@@ -56,7 +56,7 @@ app.get("/", (req, res) => {
 app.post("/", async (req, res) => {
   try {
     const { prompt } = req.body;
-    if (!prompt) return res.status(400).json({ error: "Missing 'prompt'" });
+    if (!prompt) return res.status(400).json({ error: "Missing 'prompt' in request body" });
 
     const response = await fetch("https://api.cohere.com/v2/chat", {
       method: "POST",
@@ -80,13 +80,24 @@ app.post("/", async (req, res) => {
 
     const data = await response.json();
 
-    // ✅ Correct path to Cohere assistant text
-    let text = data.messages[0].content[0].text;
+    // ✅ Safely extract assistant text
+    let text = "";
+    if (
+      data.messages &&
+      data.messages.length > 0 &&
+      data.messages[0].content &&
+      data.messages[0].content.length > 0 &&
+      data.messages[0].content[0].text
+    ) {
+      text = data.messages[0].content[0].text;
+    } else {
+      text = "Sorry, I couldn't get a response from the AI.";
+    }
 
     // ✅ Process KaTeX + emojis
     text = processText(text);
 
-    // Return as HTML so math renders
+    // Return HTML so math renders
     res.send(`
       <html>
         <head>
