@@ -80,24 +80,19 @@ app.post("/", async (req, res) => {
 
     const data = await response.json();
 
-    // ✅ Safely extract assistant text
-    let text = "";
-    if (
-      data.messages &&
-      data.messages.length > 0 &&
-      data.messages[0].content &&
-      data.messages[0].content.length > 0 &&
-      data.messages[0].content[0].text
-    ) {
-      text = data.messages[0].content[0].text;
-    } else {
-      text = "Sorry, I couldn't get a response from the AI.";
+    // Find first assistant message safely
+    const assistantMsg = data.messages?.find(m => m.role === "assistant");
+    let text = assistantMsg?.content?.[0]?.text;
+
+    if (!text) {
+      // Plain text fallback if AI response is missing
+      return res.send("Sorry, I couldn't get a response from the AI.");
     }
 
-    // ✅ Process KaTeX + emojis
+    // Process KaTeX + emojis
     text = processText(text);
 
-    // Return HTML so math renders
+    // Return HTML for math rendering
     res.send(`
       <html>
         <head>
@@ -112,7 +107,7 @@ app.post("/", async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).send(`Error: ${err.message}`);
   }
 });
 
